@@ -1,0 +1,3 @@
+Hastane projesi yaptım bu hastenin poliklinikleri var ve bu polikliniklerde çalışan çalışanları vardır.Bunlar doktor,sekreter ve personeldir.Bu hastaneye girmek isteyen hastalar kayıt olmalı ve ondan sonta giriş yapmalı ve istedği randevuyu seçmelidir.
+doktorlar kendine gelen randevuyu görüntüler ve ilaç yazabilirler spesifik bir hastaya .Sekreterleri iki türe ayırdım bir admin olanlar yani doktor ekleme, sekreter ekleme , personel ekleme, poliklinik ekleme ,finansal işler gibi kısımlara bakarlar.
+Normal sekreterler ise randevu oluşturma ve duyuru oluşturma gibi işlemleri yapabilirler.

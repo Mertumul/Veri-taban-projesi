@@ -1,0 +1,1492 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 11.18
+-- Dumped by pg_dump version 11.18
+
+-- Started on 2022-12-28 01:34:39
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- TOC entry 6 (class 2615 OID 16432)
+-- Name: Person; Type: SCHEMA; Schema: -; Owner: postgres
+--
+
+CREATE SCHEMA "Person";
+
+
+ALTER SCHEMA "Person" OWNER TO postgres;
+
+--
+-- TOC entry 228 (class 1255 OID 16856)
+-- Name: employees(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.employees() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+begin	
+update "Person"."totalEmployee" set total=total+1;
+return new;
+end;
+$$;
+
+
+ALTER FUNCTION public.employees() OWNER TO postgres;
+
+--
+-- TOC entry 227 (class 1255 OID 16851)
+-- Name: patients(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.patients() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+begin	
+update "Person"."totalPatient" set total=total+1;
+return new;
+end;
+$$;
+
+
+ALTER FUNCTION public.patients() OWNER TO postgres;
+
+--
+-- TOC entry 246 (class 1255 OID 16846)
+-- Name: personsearch(integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.personsearch(personno integer) RETURNS TABLE(name_ character varying, surname_ character varying, tc_ character varying, age_ smallint, password_ character varying, gender_ character)
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    RETURN QUERY SELECT "name", "surname","tc","age","password","gender" FROM "Person"."Person"
+                 WHERE "personId" = personNo;
+END;
+$$;
+
+
+ALTER FUNCTION public.personsearch(personno integer) OWNER TO postgres;
+
+--
+-- TOC entry 226 (class 1255 OID 16847)
+-- Name: tax(money); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.tax(salary money) RETURNS money
+    LANGUAGE plpgsql
+    AS $$
+begin
+salary:=salary*0.1 ;
+return salary;
+
+end ;
+$$;
+
+
+ALTER FUNCTION public.tax(salary money) OWNER TO postgres;
+
+--
+-- TOC entry 241 (class 1255 OID 16844)
+-- Name: total_expense(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.total_expense() RETURNS money
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    total_Expense NUMERIC;
+BEGIN
+    total_Expense := (SELECT SUM("public"."Expense"."electric"+"public"."Expense"."water"+"public"."Expense"."naturalGas"+"public"."Expense"."medicalSupplies") FROM "public"."Expense");
+
+    RETURN total_Expense;
+END
+$$;
+
+
+ALTER FUNCTION public.total_expense() OWNER TO postgres;
+
+--
+-- TOC entry 244 (class 1255 OID 16845)
+-- Name: total_paidsalary(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.total_paidsalary() RETURNS money
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    total_PaidSalary NUMERIC;
+	total_doctorSalary NUMERIC;
+	total_SecretarySalary NUMERIC;
+	total_StaffSalary NUMERIC;
+BEGIN
+    total_doctorSalary := (SELECT SUM("Person"."Doctor"."salary") FROM "Person"."Doctor");
+	total_SecretarySalary:=(SELECT SUM("Person"."Secretary"."salary") FROM "Person"."Secretary");
+	total_StaffSalary:=(SELECT SUM("Person"."Staff"."salary") FROM "Person"."Staff");
+	total_PaidSalary:= total_doctorSalary + total_SecretarySalary + total_StaffSalary;
+    RETURN total_PaidSalary;
+END
+$$;
+
+
+ALTER FUNCTION public.total_paidsalary() OWNER TO postgres;
+
+--
+-- TOC entry 242 (class 1255 OID 16842)
+-- Name: totoal_income(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.totoal_income() RETURNS money
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    total_Income NUMERIC;
+BEGIN
+    total_Income := (SELECT SUM("public"."Income"."appointmentFee"+"public"."Income"."donation") FROM "public"."Income");
+
+    RETURN total_Income;
+END
+$$;
+
+
+ALTER FUNCTION public.totoal_income() OWNER TO postgres;
+
+--
+-- TOC entry 245 (class 1255 OID 16876)
+-- Name: trackDeletedItems(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public."trackDeletedItems"() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+
+
+        INSERT INTO "public"."deleted_department"("deletedId", "deleted_name","date")
+        VALUES(OLD."departmentId", OLD."departmentName", CURRENT_TIMESTAMP::TIMESTAMP);
+
+
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public."trackDeletedItems"() OWNER TO postgres;
+
+--
+-- TOC entry 243 (class 1255 OID 16866)
+-- Name: viewSalaryChangeFunction(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public."viewSalaryChangeFunction"() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    IF NEW."salary" <> OLD."salary" THEN
+        INSERT INTO "public"."viewTheSalaryChange"("drId", "oldSalary", "newSalart", "date")
+        VALUES(OLD."personId", OLD."salary", NEW."salary", CURRENT_TIMESTAMP::TIMESTAMP);
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public."viewSalaryChangeFunction"() OWNER TO postgres;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- TOC entry 202 (class 1259 OID 16559)
+-- Name: Doctor; Type: TABLE; Schema: Person; Owner: postgres
+--
+
+CREATE TABLE "Person"."Doctor" (
+    "personId" integer NOT NULL,
+    "drAdress" character varying(15) NOT NULL,
+    "drTelephone" character varying(20) NOT NULL,
+    "drExperince" smallint NOT NULL,
+    "drEmail" character varying(25) NOT NULL,
+    salary money NOT NULL,
+    "titleId" integer NOT NULL
+);
+
+
+ALTER TABLE "Person"."Doctor" OWNER TO postgres;
+
+--
+-- TOC entry 201 (class 1259 OID 16537)
+-- Name: Employee; Type: TABLE; Schema: Person; Owner: postgres
+--
+
+CREATE TABLE "Person"."Employee" (
+    "personId" integer NOT NULL,
+    "trackNo" integer NOT NULL,
+    "startDate" date NOT NULL,
+    doctor boolean NOT NULL,
+    secretary boolean NOT NULL,
+    staff boolean NOT NULL,
+    "policlinicId" integer NOT NULL
+);
+
+
+ALTER TABLE "Person"."Employee" OWNER TO postgres;
+
+--
+-- TOC entry 200 (class 1259 OID 16535)
+-- Name: Employee_personId_seq; Type: SEQUENCE; Schema: Person; Owner: postgres
+--
+
+CREATE SEQUENCE "Person"."Employee_personId_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE "Person"."Employee_personId_seq" OWNER TO postgres;
+
+--
+-- TOC entry 2998 (class 0 OID 0)
+-- Dependencies: 200
+-- Name: Employee_personId_seq; Type: SEQUENCE OWNED BY; Schema: Person; Owner: postgres
+--
+
+ALTER SEQUENCE "Person"."Employee_personId_seq" OWNED BY "Person"."Employee"."personId";
+
+
+--
+-- TOC entry 199 (class 1259 OID 16441)
+-- Name: Patient; Type: TABLE; Schema: Person; Owner: postgres
+--
+
+CREATE TABLE "Person"."Patient" (
+    "personId" integer NOT NULL,
+    companion character varying(10) NOT NULL,
+    "mothersName" character varying(10) NOT NULL,
+    "fathersName" character varying(10) NOT NULL
+);
+
+
+ALTER TABLE "Person"."Patient" OWNER TO postgres;
+
+--
+-- TOC entry 198 (class 1259 OID 16435)
+-- Name: Person; Type: TABLE; Schema: Person; Owner: postgres
+--
+
+CREATE TABLE "Person"."Person" (
+    "personId" integer NOT NULL,
+    name character varying(10) NOT NULL,
+    surname character varying(10) NOT NULL,
+    tc character varying(11) NOT NULL,
+    age smallint NOT NULL,
+    password character varying(10) NOT NULL,
+    gender character(1) NOT NULL,
+    employee boolean NOT NULL,
+    patient boolean NOT NULL
+);
+
+
+ALTER TABLE "Person"."Person" OWNER TO postgres;
+
+--
+-- TOC entry 197 (class 1259 OID 16433)
+-- Name: Person_personId_seq; Type: SEQUENCE; Schema: Person; Owner: postgres
+--
+
+CREATE SEQUENCE "Person"."Person_personId_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE "Person"."Person_personId_seq" OWNER TO postgres;
+
+--
+-- TOC entry 2999 (class 0 OID 0)
+-- Dependencies: 197
+-- Name: Person_personId_seq; Type: SEQUENCE OWNED BY; Schema: Person; Owner: postgres
+--
+
+ALTER SEQUENCE "Person"."Person_personId_seq" OWNED BY "Person"."Person"."personId";
+
+
+--
+-- TOC entry 203 (class 1259 OID 16609)
+-- Name: Secretary; Type: TABLE; Schema: Person; Owner: postgres
+--
+
+CREATE TABLE "Person"."Secretary" (
+    "personId" integer NOT NULL,
+    "stExperience" smallint NOT NULL,
+    admin boolean NOT NULL,
+    salary money
+);
+
+
+ALTER TABLE "Person"."Secretary" OWNER TO postgres;
+
+--
+-- TOC entry 204 (class 1259 OID 16619)
+-- Name: Staff; Type: TABLE; Schema: Person; Owner: postgres
+--
+
+CREATE TABLE "Person"."Staff" (
+    "personId" integer NOT NULL,
+    salary money NOT NULL,
+    "departmentId" integer NOT NULL,
+    experience integer NOT NULL
+);
+
+
+ALTER TABLE "Person"."Staff" OWNER TO postgres;
+
+--
+-- TOC entry 221 (class 1259 OID 16853)
+-- Name: totalEmployee; Type: TABLE; Schema: Person; Owner: postgres
+--
+
+CREATE TABLE "Person"."totalEmployee" (
+    total integer
+);
+
+
+ALTER TABLE "Person"."totalEmployee" OWNER TO postgres;
+
+--
+-- TOC entry 220 (class 1259 OID 16848)
+-- Name: totalPatient; Type: TABLE; Schema: Person; Owner: postgres
+--
+
+CREATE TABLE "Person"."totalPatient" (
+    total integer
+);
+
+
+ALTER TABLE "Person"."totalPatient" OWNER TO postgres;
+
+--
+-- TOC entry 218 (class 1259 OID 16797)
+-- Name: Announcement; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."Announcement" (
+    "announcementId" integer NOT NULL,
+    "personId" integer NOT NULL,
+    announcement character varying(40) NOT NULL,
+    date date NOT NULL
+);
+
+
+ALTER TABLE public."Announcement" OWNER TO postgres;
+
+--
+-- TOC entry 217 (class 1259 OID 16795)
+-- Name: Announcement_announcementId_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public."Announcement_announcementId_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public."Announcement_announcementId_seq" OWNER TO postgres;
+
+--
+-- TOC entry 3000 (class 0 OID 0)
+-- Dependencies: 217
+-- Name: Announcement_announcementId_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public."Announcement_announcementId_seq" OWNED BY public."Announcement"."announcementId";
+
+
+--
+-- TOC entry 216 (class 1259 OID 16779)
+-- Name: Appointment; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."Appointment" (
+    "appointmentId" integer NOT NULL,
+    "personId" integer,
+    "appointmentDr" integer NOT NULL,
+    date date NOT NULL,
+    "time" time without time zone NOT NULL,
+    complaint character varying(40),
+    "appointmentStatus" boolean,
+    "drStatus" boolean
+);
+
+
+ALTER TABLE public."Appointment" OWNER TO postgres;
+
+--
+-- TOC entry 215 (class 1259 OID 16777)
+-- Name: Appointment_appointmentId_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public."Appointment_appointmentId_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public."Appointment_appointmentId_seq" OWNER TO postgres;
+
+--
+-- TOC entry 3001 (class 0 OID 0)
+-- Dependencies: 215
+-- Name: Appointment_appointmentId_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public."Appointment_appointmentId_seq" OWNED BY public."Appointment"."appointmentId";
+
+
+--
+-- TOC entry 210 (class 1259 OID 16733)
+-- Name: Department; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."Department" (
+    "departmentId" integer NOT NULL,
+    "departmentName" character varying(20) NOT NULL
+);
+
+
+ALTER TABLE public."Department" OWNER TO postgres;
+
+--
+-- TOC entry 209 (class 1259 OID 16731)
+-- Name: Department_departmentId_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public."Department_departmentId_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public."Department_departmentId_seq" OWNER TO postgres;
+
+--
+-- TOC entry 3002 (class 0 OID 0)
+-- Dependencies: 209
+-- Name: Department_departmentId_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public."Department_departmentId_seq" OWNED BY public."Department"."departmentId";
+
+
+--
+-- TOC entry 214 (class 1259 OID 16765)
+-- Name: Expense; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."Expense" (
+    "expenseId" integer NOT NULL,
+    "personId" integer NOT NULL,
+    electric money,
+    water money,
+    "naturalGas" money,
+    "medicalSupplies" money
+);
+
+
+ALTER TABLE public."Expense" OWNER TO postgres;
+
+--
+-- TOC entry 213 (class 1259 OID 16763)
+-- Name: Expense_expenseId_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public."Expense_expenseId_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public."Expense_expenseId_seq" OWNER TO postgres;
+
+--
+-- TOC entry 3003 (class 0 OID 0)
+-- Dependencies: 213
+-- Name: Expense_expenseId_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public."Expense_expenseId_seq" OWNED BY public."Expense"."expenseId";
+
+
+--
+-- TOC entry 212 (class 1259 OID 16746)
+-- Name: Income; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."Income" (
+    "IncomeId" integer NOT NULL,
+    "personId" integer NOT NULL,
+    donation money,
+    "appointmentFee" money
+);
+
+
+ALTER TABLE public."Income" OWNER TO postgres;
+
+--
+-- TOC entry 211 (class 1259 OID 16744)
+-- Name: Income_IncomeId_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public."Income_IncomeId_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public."Income_IncomeId_seq" OWNER TO postgres;
+
+--
+-- TOC entry 3004 (class 0 OID 0)
+-- Dependencies: 211
+-- Name: Income_IncomeId_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public."Income_IncomeId_seq" OWNED BY public."Income"."IncomeId";
+
+
+--
+-- TOC entry 206 (class 1259 OID 16708)
+-- Name: Policlinic; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."Policlinic" (
+    "policlinicId" integer NOT NULL,
+    "policlinicName" character varying(20) NOT NULL
+);
+
+
+ALTER TABLE public."Policlinic" OWNER TO postgres;
+
+--
+-- TOC entry 205 (class 1259 OID 16706)
+-- Name: Policlinic_policlinicId_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public."Policlinic_policlinicId_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public."Policlinic_policlinicId_seq" OWNER TO postgres;
+
+--
+-- TOC entry 3005 (class 0 OID 0)
+-- Dependencies: 205
+-- Name: Policlinic_policlinicId_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public."Policlinic_policlinicId_seq" OWNED BY public."Policlinic"."policlinicId";
+
+
+--
+-- TOC entry 219 (class 1259 OID 16803)
+-- Name: Prescription; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."Prescription" (
+    "doctorNo" integer NOT NULL,
+    "patientNo" integer NOT NULL,
+    "medicineName" character varying(20) NOT NULL
+);
+
+
+ALTER TABLE public."Prescription" OWNER TO postgres;
+
+--
+-- TOC entry 208 (class 1259 OID 16720)
+-- Name: Title; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."Title" (
+    "titleId" integer NOT NULL,
+    "titleName" character varying(40) NOT NULL
+);
+
+
+ALTER TABLE public."Title" OWNER TO postgres;
+
+--
+-- TOC entry 207 (class 1259 OID 16718)
+-- Name: Title_titleId_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public."Title_titleId_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public."Title_titleId_seq" OWNER TO postgres;
+
+--
+-- TOC entry 3006 (class 0 OID 0)
+-- Dependencies: 207
+-- Name: Title_titleId_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public."Title_titleId_seq" OWNED BY public."Title"."titleId";
+
+
+--
+-- TOC entry 225 (class 1259 OID 16870)
+-- Name: deleted_department; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.deleted_department (
+    "deletedId" integer NOT NULL,
+    deleted_name character varying(20) NOT NULL,
+    date timestamp without time zone NOT NULL
+);
+
+
+ALTER TABLE public.deleted_department OWNER TO postgres;
+
+--
+-- TOC entry 224 (class 1259 OID 16868)
+-- Name: deleted_department_deletedId_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public."deleted_department_deletedId_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public."deleted_department_deletedId_seq" OWNER TO postgres;
+
+--
+-- TOC entry 3007 (class 0 OID 0)
+-- Dependencies: 224
+-- Name: deleted_department_deletedId_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public."deleted_department_deletedId_seq" OWNED BY public.deleted_department."deletedId";
+
+
+--
+-- TOC entry 223 (class 1259 OID 16860)
+-- Name: viewTheSalaryChange; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."viewTheSalaryChange" (
+    "recordNo" integer NOT NULL,
+    "drId" integer NOT NULL,
+    "oldSalary" money NOT NULL,
+    "newSalart" money NOT NULL,
+    date timestamp without time zone NOT NULL
+);
+
+
+ALTER TABLE public."viewTheSalaryChange" OWNER TO postgres;
+
+--
+-- TOC entry 222 (class 1259 OID 16858)
+-- Name: viewTheSalaryChange_recordNo_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public."viewTheSalaryChange_recordNo_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public."viewTheSalaryChange_recordNo_seq" OWNER TO postgres;
+
+--
+-- TOC entry 3008 (class 0 OID 0)
+-- Dependencies: 222
+-- Name: viewTheSalaryChange_recordNo_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public."viewTheSalaryChange_recordNo_seq" OWNED BY public."viewTheSalaryChange"."recordNo";
+
+
+--
+-- TOC entry 2784 (class 2604 OID 16438)
+-- Name: Person personId; Type: DEFAULT; Schema: Person; Owner: postgres
+--
+
+ALTER TABLE ONLY "Person"."Person" ALTER COLUMN "personId" SET DEFAULT nextval('"Person"."Person_personId_seq"'::regclass);
+
+
+--
+-- TOC entry 2791 (class 2604 OID 16800)
+-- Name: Announcement announcementId; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Announcement" ALTER COLUMN "announcementId" SET DEFAULT nextval('public."Announcement_announcementId_seq"'::regclass);
+
+
+--
+-- TOC entry 2790 (class 2604 OID 16782)
+-- Name: Appointment appointmentId; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Appointment" ALTER COLUMN "appointmentId" SET DEFAULT nextval('public."Appointment_appointmentId_seq"'::regclass);
+
+
+--
+-- TOC entry 2787 (class 2604 OID 16736)
+-- Name: Department departmentId; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Department" ALTER COLUMN "departmentId" SET DEFAULT nextval('public."Department_departmentId_seq"'::regclass);
+
+
+--
+-- TOC entry 2789 (class 2604 OID 16768)
+-- Name: Expense expenseId; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Expense" ALTER COLUMN "expenseId" SET DEFAULT nextval('public."Expense_expenseId_seq"'::regclass);
+
+
+--
+-- TOC entry 2788 (class 2604 OID 16749)
+-- Name: Income IncomeId; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Income" ALTER COLUMN "IncomeId" SET DEFAULT nextval('public."Income_IncomeId_seq"'::regclass);
+
+
+--
+-- TOC entry 2785 (class 2604 OID 16711)
+-- Name: Policlinic policlinicId; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Policlinic" ALTER COLUMN "policlinicId" SET DEFAULT nextval('public."Policlinic_policlinicId_seq"'::regclass);
+
+
+--
+-- TOC entry 2786 (class 2604 OID 16723)
+-- Name: Title titleId; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Title" ALTER COLUMN "titleId" SET DEFAULT nextval('public."Title_titleId_seq"'::regclass);
+
+
+--
+-- TOC entry 2793 (class 2604 OID 16873)
+-- Name: deleted_department deletedId; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.deleted_department ALTER COLUMN "deletedId" SET DEFAULT nextval('public."deleted_department_deletedId_seq"'::regclass);
+
+
+--
+-- TOC entry 2792 (class 2604 OID 16863)
+-- Name: viewTheSalaryChange recordNo; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."viewTheSalaryChange" ALTER COLUMN "recordNo" SET DEFAULT nextval('public."viewTheSalaryChange_recordNo_seq"'::regclass);
+
+
+--
+-- TOC entry 2969 (class 0 OID 16559)
+-- Dependencies: 202
+-- Data for Name: Doctor; Type: TABLE DATA; Schema: Person; Owner: postgres
+--
+
+COPY "Person"."Doctor" ("personId", "drAdress", "drTelephone", "drExperince", "drEmail", salary, "titleId") FROM stdin;
+51	mugla	(111) 111-1111	5	caghan@outlook.com	$5,000.00	2
+56	Mugla	(788) 888-8888	18	sevgi@outlook.com	$20,000.00	2
+50	sakarya	(555) 555-5555	10	test@outlook.com	$10,000.00	3
+\.
+
+
+--
+-- TOC entry 2968 (class 0 OID 16537)
+-- Dependencies: 201
+-- Data for Name: Employee; Type: TABLE DATA; Schema: Person; Owner: postgres
+--
+
+COPY "Person"."Employee" ("personId", "trackNo", "startDate", doctor, secretary, staff, "policlinicId") FROM stdin;
+44	100	2019-01-01	f	t	f	1
+50	789	2020-10-10	t	f	f	5
+51	666	2022-12-12	t	f	f	4
+53	258	2005-10-10	f	t	f	10
+54	999	2011-11-11	f	f	t	8
+56	788	2000-12-12	t	f	f	12
+\.
+
+
+--
+-- TOC entry 2966 (class 0 OID 16441)
+-- Dependencies: 199
+-- Data for Name: Patient; Type: TABLE DATA; Schema: Person; Owner: postgres
+--
+
+COPY "Person"."Patient" ("personId", companion, "mothersName", "fathersName") FROM stdin;
+4	noene	noene	noene
+5	xxxxx	xxxxx	xxxxxx
+6	yyyy	yyyy	yyyy
+7	Bugra	ali	fatma
+8	Mervan	Sevgi	Hasan
+55	fadime	fadime	ali
+57	Bukrat	Hulya	Bulent
+\.
+
+
+--
+-- TOC entry 2965 (class 0 OID 16435)
+-- Dependencies: 198
+-- Data for Name: Person; Type: TABLE DATA; Schema: Person; Owner: postgres
+--
+
+COPY "Person"."Person" ("personId", name, surname, tc, age, password, gender, employee, patient) FROM stdin;
+4	Mert	Umul	16666666666	20	easypass	M	f	t
+5	Tuncer	Alevli	17777777777	19	hardpass	M	f	t
+6	Burak	Fidan	18888888888	20	yyyy	M	f	t
+7	Melih	Onbasi	20000000000	21	123456	M	f	t
+8	Eren	Kara	21111111111	22	789654	M	f	t
+30	Sevgi	Sevcan	33333333333	25	pass123	F	t	f
+44	Buse	Alevli	33333333333	25	pass123	F	t	f
+50	test	test	55555555555	35	test	M	t	f
+51	cagahn	ozudogru	77777777777	30	caghanpass	M	t	f
+52	Asım	Alim	25252525252	34	asim123	M	t	f
+54	Cem	Karsu	85858585858	45	cemkarsu	M	t	f
+53	Asim	Alim	44444444444	34	asim25	M	t	f
+55	Sarah	Benli	36666666666	21	sarah123	F	f	t
+56	Sevgi	Ilhan	78888888888	45	sevgi123	F	t	f
+57	Umut	Konukcu	96666666666	20	umut123	M	f	t
+\.
+
+
+--
+-- TOC entry 2970 (class 0 OID 16609)
+-- Dependencies: 203
+-- Data for Name: Secretary; Type: TABLE DATA; Schema: Person; Owner: postgres
+--
+
+COPY "Person"."Secretary" ("personId", "stExperience", admin, salary) FROM stdin;
+44	3	t	$15,000.00
+53	10	f	$5,000.00
+\.
+
+
+--
+-- TOC entry 2971 (class 0 OID 16619)
+-- Dependencies: 204
+-- Data for Name: Staff; Type: TABLE DATA; Schema: Person; Owner: postgres
+--
+
+COPY "Person"."Staff" ("personId", salary, "departmentId", experience) FROM stdin;
+54	$70,000.00	2	15
+\.
+
+
+--
+-- TOC entry 2988 (class 0 OID 16853)
+-- Dependencies: 221
+-- Data for Name: totalEmployee; Type: TABLE DATA; Schema: Person; Owner: postgres
+--
+
+COPY "Person"."totalEmployee" (total) FROM stdin;
+6
+\.
+
+
+--
+-- TOC entry 2987 (class 0 OID 16848)
+-- Dependencies: 220
+-- Data for Name: totalPatient; Type: TABLE DATA; Schema: Person; Owner: postgres
+--
+
+COPY "Person"."totalPatient" (total) FROM stdin;
+7
+\.
+
+
+--
+-- TOC entry 2985 (class 0 OID 16797)
+-- Dependencies: 218
+-- Data for Name: Announcement; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Announcement" ("announcementId", "personId", announcement, date) FROM stdin;
+1	53	Dont forget the meeting tomorrow!!	2022-12-26
+2	53	test1	2022-12-27
+\.
+
+
+--
+-- TOC entry 2983 (class 0 OID 16779)
+-- Dependencies: 216
+-- Data for Name: Appointment; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Appointment" ("appointmentId", "personId", "appointmentDr", date, "time", complaint, "appointmentStatus", "drStatus") FROM stdin;
+1	4	51	2023-10-11	12:12:00	headache	f	t
+2	4	50	2022-12-12	11:50:00	Stamache	f	t
+4	5	50	2022-12-27	11:10:00	back pain	f	t
+5	4	51	2022-10-10	13:13:00	test	f	t
+3	55	51	2022-12-27	10:10:00	broken leg	f	t
+6	57	56	2022-12-28	10:58:00	sore throat	f	t
+\.
+
+
+--
+-- TOC entry 2977 (class 0 OID 16733)
+-- Dependencies: 210
+-- Data for Name: Department; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Department" ("departmentId", "departmentName") FROM stdin;
+3	Security
+2	Cleaninig
+\.
+
+
+--
+-- TOC entry 2981 (class 0 OID 16765)
+-- Dependencies: 214
+-- Data for Name: Expense; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Expense" ("expenseId", "personId", electric, water, "naturalGas", "medicalSupplies") FROM stdin;
+1	44	$10,000.00	$10,000.00	$10,000.00	$10,000.00
+\.
+
+
+--
+-- TOC entry 2979 (class 0 OID 16746)
+-- Dependencies: 212
+-- Data for Name: Income; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Income" ("IncomeId", "personId", donation, "appointmentFee") FROM stdin;
+1	44	$1,000,000.00	$4,000.00
+3	44	$2,000,000.00	$5,000.00
+4	44	$100,000.00	$4,500.00
+\.
+
+
+--
+-- TOC entry 2973 (class 0 OID 16708)
+-- Dependencies: 206
+-- Data for Name: Policlinic; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Policlinic" ("policlinicId", "policlinicName") FROM stdin;
+1	Administrator
+2	emergency
+3	urology
+4	cardiology
+5	neurology
+6	psychology
+7	eye_diseases
+8	dermatology
+9	orthopedics
+10	intensive_care
+11	algology
+12	family
+\.
+
+
+--
+-- TOC entry 2986 (class 0 OID 16803)
+-- Dependencies: 219
+-- Data for Name: Prescription; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Prescription" ("doctorNo", "patientNo", "medicineName") FROM stdin;
+51	8	Adderall
+51	4	Ephineprin
+56	57	Parol
+\.
+
+
+--
+-- TOC entry 2975 (class 0 OID 16720)
+-- Dependencies: 208
+-- Data for Name: Title; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Title" ("titleId", "titleName") FROM stdin;
+1	Practitioner_Doctor
+2	Specialist
+3	Operator_Doctor
+4	AssistantProfessor
+5	Associateprofessor
+6	Professor
+\.
+
+
+--
+-- TOC entry 2992 (class 0 OID 16870)
+-- Dependencies: 225
+-- Data for Name: deleted_department; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.deleted_department ("deletedId", deleted_name, date) FROM stdin;
+5	temp	2022-12-28 01:05:10.639821
+4	asd	2022-12-28 01:05:13.252211
+\.
+
+
+--
+-- TOC entry 2990 (class 0 OID 16860)
+-- Dependencies: 223
+-- Data for Name: viewTheSalaryChange; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."viewTheSalaryChange" ("recordNo", "drId", "oldSalary", "newSalart", date) FROM stdin;
+1	50	$2,500.00	$10,000.00	2022-12-28 00:40:33.767233
+\.
+
+
+--
+-- TOC entry 3009 (class 0 OID 0)
+-- Dependencies: 200
+-- Name: Employee_personId_seq; Type: SEQUENCE SET; Schema: Person; Owner: postgres
+--
+
+SELECT pg_catalog.setval('"Person"."Employee_personId_seq"', 1, false);
+
+
+--
+-- TOC entry 3010 (class 0 OID 0)
+-- Dependencies: 197
+-- Name: Person_personId_seq; Type: SEQUENCE SET; Schema: Person; Owner: postgres
+--
+
+SELECT pg_catalog.setval('"Person"."Person_personId_seq"', 57, true);
+
+
+--
+-- TOC entry 3011 (class 0 OID 0)
+-- Dependencies: 217
+-- Name: Announcement_announcementId_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public."Announcement_announcementId_seq"', 2, true);
+
+
+--
+-- TOC entry 3012 (class 0 OID 0)
+-- Dependencies: 215
+-- Name: Appointment_appointmentId_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public."Appointment_appointmentId_seq"', 6, true);
+
+
+--
+-- TOC entry 3013 (class 0 OID 0)
+-- Dependencies: 209
+-- Name: Department_departmentId_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public."Department_departmentId_seq"', 5, true);
+
+
+--
+-- TOC entry 3014 (class 0 OID 0)
+-- Dependencies: 213
+-- Name: Expense_expenseId_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public."Expense_expenseId_seq"', 2, true);
+
+
+--
+-- TOC entry 3015 (class 0 OID 0)
+-- Dependencies: 211
+-- Name: Income_IncomeId_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public."Income_IncomeId_seq"', 4, true);
+
+
+--
+-- TOC entry 3016 (class 0 OID 0)
+-- Dependencies: 205
+-- Name: Policlinic_policlinicId_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public."Policlinic_policlinicId_seq"', 12, true);
+
+
+--
+-- TOC entry 3017 (class 0 OID 0)
+-- Dependencies: 207
+-- Name: Title_titleId_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public."Title_titleId_seq"', 6, true);
+
+
+--
+-- TOC entry 3018 (class 0 OID 0)
+-- Dependencies: 224
+-- Name: deleted_department_deletedId_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public."deleted_department_deletedId_seq"', 1, false);
+
+
+--
+-- TOC entry 3019 (class 0 OID 0)
+-- Dependencies: 222
+-- Name: viewTheSalaryChange_recordNo_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public."viewTheSalaryChange_recordNo_seq"', 1, true);
+
+
+--
+-- TOC entry 2801 (class 2606 OID 16563)
+-- Name: Doctor Doctor_pkey; Type: CONSTRAINT; Schema: Person; Owner: postgres
+--
+
+ALTER TABLE ONLY "Person"."Doctor"
+    ADD CONSTRAINT "Doctor_pkey" PRIMARY KEY ("personId");
+
+
+--
+-- TOC entry 2803 (class 2606 OID 16613)
+-- Name: Secretary Secretary_pkey; Type: CONSTRAINT; Schema: Person; Owner: postgres
+--
+
+ALTER TABLE ONLY "Person"."Secretary"
+    ADD CONSTRAINT "Secretary_pkey" PRIMARY KEY ("personId");
+
+
+--
+-- TOC entry 2805 (class 2606 OID 16624)
+-- Name: Staff Staff_pkey; Type: CONSTRAINT; Schema: Person; Owner: postgres
+--
+
+ALTER TABLE ONLY "Person"."Staff"
+    ADD CONSTRAINT "Staff_pkey" PRIMARY KEY ("personId");
+
+
+--
+-- TOC entry 2799 (class 2606 OID 16542)
+-- Name: Employee employeePK; Type: CONSTRAINT; Schema: Person; Owner: postgres
+--
+
+ALTER TABLE ONLY "Person"."Employee"
+    ADD CONSTRAINT "employeePK" PRIMARY KEY ("personId");
+
+
+--
+-- TOC entry 2797 (class 2606 OID 16445)
+-- Name: Patient patientPK; Type: CONSTRAINT; Schema: Person; Owner: postgres
+--
+
+ALTER TABLE ONLY "Person"."Patient"
+    ADD CONSTRAINT "patientPK" PRIMARY KEY ("personId");
+
+
+--
+-- TOC entry 2795 (class 2606 OID 16440)
+-- Name: Person personPK; Type: CONSTRAINT; Schema: Person; Owner: postgres
+--
+
+ALTER TABLE ONLY "Person"."Person"
+    ADD CONSTRAINT "personPK" PRIMARY KEY ("personId");
+
+
+--
+-- TOC entry 2813 (class 2606 OID 16751)
+-- Name: Income IncomePK; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Income"
+    ADD CONSTRAINT "IncomePK" PRIMARY KEY ("IncomeId");
+
+
+--
+-- TOC entry 2823 (class 2606 OID 16865)
+-- Name: viewTheSalaryChange PK; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."viewTheSalaryChange"
+    ADD CONSTRAINT "PK" PRIMARY KEY ("recordNo");
+
+
+--
+-- TOC entry 2825 (class 2606 OID 16875)
+-- Name: deleted_department PK_deleted; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.deleted_department
+    ADD CONSTRAINT "PK_deleted" PRIMARY KEY ("deletedId");
+
+
+--
+-- TOC entry 2821 (class 2606 OID 16807)
+-- Name: Prescription Prescription_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Prescription"
+    ADD CONSTRAINT "Prescription_pkey" PRIMARY KEY ("doctorNo", "patientNo");
+
+
+--
+-- TOC entry 2819 (class 2606 OID 16802)
+-- Name: Announcement announcementPK; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Announcement"
+    ADD CONSTRAINT "announcementPK" PRIMARY KEY ("announcementId");
+
+
+--
+-- TOC entry 2817 (class 2606 OID 16784)
+-- Name: Appointment appointmentPK; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Appointment"
+    ADD CONSTRAINT "appointmentPK" PRIMARY KEY ("appointmentId");
+
+
+--
+-- TOC entry 2811 (class 2606 OID 16738)
+-- Name: Department departmentPK; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Department"
+    ADD CONSTRAINT "departmentPK" PRIMARY KEY ("departmentId");
+
+
+--
+-- TOC entry 2815 (class 2606 OID 16770)
+-- Name: Expense expensePK; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Expense"
+    ADD CONSTRAINT "expensePK" PRIMARY KEY ("expenseId");
+
+
+--
+-- TOC entry 2807 (class 2606 OID 16713)
+-- Name: Policlinic policlinicPK; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Policlinic"
+    ADD CONSTRAINT "policlinicPK" PRIMARY KEY ("policlinicId");
+
+
+--
+-- TOC entry 2809 (class 2606 OID 16725)
+-- Name: Title urunlerPK; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Title"
+    ADD CONSTRAINT "urunlerPK" PRIMARY KEY ("titleId");
+
+
+--
+-- TOC entry 2840 (class 2620 OID 16857)
+-- Name: Employee employeetrigger; Type: TRIGGER; Schema: Person; Owner: postgres
+--
+
+CREATE TRIGGER employeetrigger AFTER INSERT ON "Person"."Employee" FOR EACH ROW EXECUTE PROCEDURE public.employees();
+
+
+--
+-- TOC entry 2839 (class 2620 OID 16852)
+-- Name: Patient patienttrigger; Type: TRIGGER; Schema: Person; Owner: postgres
+--
+
+CREATE TRIGGER patienttrigger AFTER INSERT ON "Person"."Patient" FOR EACH ROW EXECUTE PROCEDURE public.patients();
+
+
+--
+-- TOC entry 2841 (class 2620 OID 16867)
+-- Name: Doctor salarychangetrigger; Type: TRIGGER; Schema: Person; Owner: postgres
+--
+
+CREATE TRIGGER salarychangetrigger BEFORE UPDATE ON "Person"."Doctor" FOR EACH ROW EXECUTE PROCEDURE public."viewSalaryChangeFunction"();
+
+
+--
+-- TOC entry 2842 (class 2620 OID 16877)
+-- Name: Department deleted_items_trigger; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER deleted_items_trigger AFTER DELETE ON public."Department" FOR EACH ROW EXECUTE PROCEDURE public."trackDeletedItems"();
+
+
+--
+-- TOC entry 2832 (class 2606 OID 16739)
+-- Name: Staff departmentFK; Type: FK CONSTRAINT; Schema: Person; Owner: postgres
+--
+
+ALTER TABLE ONLY "Person"."Staff"
+    ADD CONSTRAINT "departmentFK" FOREIGN KEY ("departmentId") REFERENCES public."Department"("departmentId") NOT VALID;
+
+
+--
+-- TOC entry 2828 (class 2606 OID 16564)
+-- Name: Doctor doctorFK; Type: FK CONSTRAINT; Schema: Person; Owner: postgres
+--
+
+ALTER TABLE ONLY "Person"."Doctor"
+    ADD CONSTRAINT "doctorFK" FOREIGN KEY ("personId") REFERENCES "Person"."Employee"("personId") NOT VALID;
+
+
+--
+-- TOC entry 2827 (class 2606 OID 16543)
+-- Name: Employee employeeFK; Type: FK CONSTRAINT; Schema: Person; Owner: postgres
+--
+
+ALTER TABLE ONLY "Person"."Employee"
+    ADD CONSTRAINT "employeeFK" FOREIGN KEY ("personId") REFERENCES "Person"."Person"("personId") NOT VALID;
+
+
+--
+-- TOC entry 2826 (class 2606 OID 16446)
+-- Name: Patient patientFK; Type: FK CONSTRAINT; Schema: Person; Owner: postgres
+--
+
+ALTER TABLE ONLY "Person"."Patient"
+    ADD CONSTRAINT "patientFK" FOREIGN KEY ("personId") REFERENCES "Person"."Person"("personId") ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- TOC entry 2830 (class 2606 OID 16614)
+-- Name: Secretary secretaryFK; Type: FK CONSTRAINT; Schema: Person; Owner: postgres
+--
+
+ALTER TABLE ONLY "Person"."Secretary"
+    ADD CONSTRAINT "secretaryFK" FOREIGN KEY ("personId") REFERENCES "Person"."Employee"("personId") NOT VALID;
+
+
+--
+-- TOC entry 2831 (class 2606 OID 16625)
+-- Name: Staff staffFK; Type: FK CONSTRAINT; Schema: Person; Owner: postgres
+--
+
+ALTER TABLE ONLY "Person"."Staff"
+    ADD CONSTRAINT "staffFK" FOREIGN KEY ("personId") REFERENCES "Person"."Employee"("personId") NOT VALID;
+
+
+--
+-- TOC entry 2829 (class 2606 OID 16726)
+-- Name: Doctor titleFK; Type: FK CONSTRAINT; Schema: Person; Owner: postgres
+--
+
+ALTER TABLE ONLY "Person"."Doctor"
+    ADD CONSTRAINT "titleFK" FOREIGN KEY ("titleId") REFERENCES public."Title"("titleId") NOT VALID;
+
+
+--
+-- TOC entry 2833 (class 2606 OID 16752)
+-- Name: Income IncomeFK; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Income"
+    ADD CONSTRAINT "IncomeFK" FOREIGN KEY ("personId") REFERENCES "Person"."Secretary"("personId") NOT VALID;
+
+
+--
+-- TOC entry 2836 (class 2606 OID 16790)
+-- Name: Appointment doctorFK; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Appointment"
+    ADD CONSTRAINT "doctorFK" FOREIGN KEY ("appointmentDr") REFERENCES "Person"."Doctor"("personId") NOT VALID;
+
+
+--
+-- TOC entry 2837 (class 2606 OID 16808)
+-- Name: Prescription doctorFK; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Prescription"
+    ADD CONSTRAINT "doctorFK" FOREIGN KEY ("doctorNo") REFERENCES "Person"."Doctor"("personId") NOT VALID;
+
+
+--
+-- TOC entry 2834 (class 2606 OID 16771)
+-- Name: Expense expenseFK; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Expense"
+    ADD CONSTRAINT "expenseFK" FOREIGN KEY ("personId") REFERENCES "Person"."Secretary"("personId") NOT VALID;
+
+
+--
+-- TOC entry 2835 (class 2606 OID 16785)
+-- Name: Appointment patientFK; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Appointment"
+    ADD CONSTRAINT "patientFK" FOREIGN KEY ("personId") REFERENCES "Person"."Patient"("personId") NOT VALID;
+
+
+--
+-- TOC entry 2838 (class 2606 OID 16813)
+-- Name: Prescription patientFK; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Prescription"
+    ADD CONSTRAINT "patientFK" FOREIGN KEY ("patientNo") REFERENCES "Person"."Patient"("personId") NOT VALID;
+
+
+-- Completed on 2022-12-28 01:34:39
+
+--
+-- PostgreSQL database dump complete
+--
+

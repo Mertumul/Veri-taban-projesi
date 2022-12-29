@@ -1,0 +1,130 @@
+
+create or replace function patients()
+	returns trigger
+	as
+	$$
+begin	
+update "Person"."totalPatient" set total=total+1;
+return new;
+end;
+$$
+language plpgsql;
+
+
+create trigger patientTrigger
+after insert 
+on "Person"."Patient"
+for each row 
+execute procedure patients();
+
+select * from "Person"."totalPatient"
+
+--------------------------------------------------------------------------
+
+create or replace function employees()
+	returns trigger
+	as
+	$$
+begin	
+update "Person"."totalEmployee" set total=total+1;
+return new;
+end;
+$$
+language plpgsql;
+
+
+create trigger employeeTrigger
+after insert 
+on "Person"."Employee"
+for each row 
+execute procedure employees();
+
+select * from "Person"."totalEmployee"
+
+----------------------------------------------------------------------------
+***********
+CREATE TABLE 	 (
+    "recordNo" serial,
+    "drId" integer NOT NULL,
+    "oldSalary" Money NOT NULL,
+    "newSalart" Money NOT NULL,
+    "degisiklikTarihi" TIMESTAMP NOT NULL,
+    CONSTRAINT "PK" PRIMARY KEY ("recordNo")
+);
+
+**********
+CREATE OR REPLACE FUNCTION "viewSalaryChangeFunction"()
+RETURNS TRIGGER 
+AS
+$$
+BEGIN
+    IF NEW."salary" <> OLD."salary" THEN
+        INSERT INTO "public"."viewTheSalaryChange"("drId", "oldSalary", "newSalart", "date")
+        VALUES(OLD."personId", OLD."salary", NEW."salary", CURRENT_TIMESTAMP::TIMESTAMP);
+    END IF;
+
+    RETURN NEW;
+END;
+$$
+LANGUAGE "plpgsql";
+
+**********
+CREATE TRIGGER salarychangeTrigger
+BEFORE UPDATE ON "Person"."Doctor"
+FOR EACH ROW
+EXECUTE PROCEDURE "viewSalaryChangeFunction"();
+**********
+
+select * from "Person"."Doctor"
+
+UPDATE "Person"."Doctor"
+SET "salary" = 10000
+WHERE "personId" = 50
+
+
+select * from "public"."viewTheSalaryChange"
+
+
+---------------------------------------------------------------------------------
+
+CREATE TABLE "public"."deleted_department" (
+     "deletedId" serial,
+     "deleted_name" character varying(20) not  NULL,
+    "date" TIMESTAMP NOT NULL,
+    CONSTRAINT "PK_deleted" PRIMARY KEY ("deletedId")
+);
+
+******
+CREATE OR REPLACE FUNCTION "trackDeletedItems"()
+RETURNS TRIGGER 
+AS
+$$
+BEGIN
+
+
+        INSERT INTO "public"."deleted_department"("deletedId", "deleted_name","date")
+        VALUES(OLD."departmentId", OLD."departmentName", CURRENT_TIMESTAMP::TIMESTAMP);
+
+
+    RETURN NEW;
+END;
+$$
+LANGUAGE "plpgsql";
+
+*********
+CREATE TRIGGER deleted_items_trigger
+ after delete
+ ON "public"."Department"
+ FOR EACH ROW
+ EXECUTE PROCEDURE "public""trackDeletedItems"();
+
+select * from "public"."viewTheSalaryChange"
+
+
+
+
+
+
+
+
+

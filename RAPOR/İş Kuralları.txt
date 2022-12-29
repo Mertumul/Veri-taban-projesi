@@ -1,0 +1,24 @@
+*Varlıklar
+Kişi,İşçi,Hasta,Doktor,Sekreter,Personel,Reçete,Duyuru,Randevu,Uzmanlık,Ünvan,Poliklinik,Gelir,Gider,Departman
+*İş Kuralları
+-Bu veritabanında her kişinin adı,soyadı,yaşı ve şifresi ni saklanması düşünülür.Kişi kişisinin iki tane çocuk sınıfı vardır.Bunlar Çalışan ve Hasta dır ve kişi sınıfı bu sınıflardan en az birini üye olmak zorundadır.
+-Çalışan sınıfının işe başlama tarihi ve sicil numarası gibi bilgiler tutulacaktır.Çalışanların hangi poliklinikte çalıştığı tutulmalıdır.
+-Doktorun ünvanı ve uzmanlığı da saklanmalıdır.Çalışanlar sınıfın üç tane çocuk sınıfı vardır.Bunlar Doktor,Sekreter ve Personeldir.Çalışan bu sınıflardan sadece birine üye olması zorunludur.
+-Doktorun adresi,telefon numarası,deneyim yılı,e-maili ve maaşı tutulmalıdır.Sekreterin deneyim yılı , admin olup olmadığı ve maaşı  tutulmalıdır.Persolin deneyimi ve hangi departmanda çalıştığı tutulmaldır.
+-Sekreterin deneyimi,admin olup olmadığı ve maaşı tutulmalıdır.
+-Personelde hangi departmanda çalıştığı,deneyimi ve maaşı tutulmalıdır.
+-Departmanda hangi departmanların olduğu tutulmalıdır.
+-Hastanın refakatçı,semptom,anne ve baba adı tutulmalıdır.
+-Reçetede ilacın adı,hangi doktor tarafından verildiği ve hangi hastaya verildiği tutulmalıdır.
+-Hastalıkta hastalığın adı ve bulaşıcı olup olmadığı tutlmalıdır.Teşhis edilen hastalığın ne zaman teşhis edildiği tutulmalıdır.
+-Hastanın ne zaman randevu aldığı tutulmalıdır.
+-Gelir ve giderler tutulmalıdır .Gelirlerde bağışlar ve randevu ücretleri tutulmalı.Giderlerde ise elektrik,su,doğalgaz,tıbbi malzemeler tutulmalıdır.
+-Duyuruda duyurunun içeriği ,tarihi ve hangi sekreterin yaptığı tutulmalıdır .
+-Bir personel sadece bir departmanda çalışabilir ve bir departmanda en az bir personel olmak zorundadır.
+-Bir hasta birden fazla randevu alabilir ve bir doktor birden fazla randuvuya  bakabilir.
+-Bir randevuya sadece bir doktor bakabilir ve bir randevuyu sadece bir hasta alabilir.
+-Bir doktor birden fazla reçete yazabilir.Bir reçeteyi sadece bir doktor yazabilir.
+-Bir hasta birden fazla reçete alabilir.Bir reçeteyi sadece bir hasta alabilir..
+-Bir doktorun sadece bir tane ünvanı olabilir.Bir ünvana birden fazla doktor sahip olabilir.
+-Bir polikliniğin  en az bir çalışanı olmalıdır ve bir çalışan sadece bir poliklinikte çalışabilir.
+-Gelir giderleri sadece admin olan sekreter yönetebilir.

@@ -1,0 +1,91 @@
+------------------------------------------------------------------------------------------
+create function tax(salary money)
+returns money
+language plpgsql 
+as 
+$$
+begin
+salary:=salary*0.1 ;
+return salary;
+
+end ;
+$$;
+
+select salary,tax(salary) from "Person"."Doctor"
+
+
+-----------------------------------------------------------------------------------------
+
+
+CREATE OR REPLACE FUNCTION personSearch(personNo INT)
+RETURNS TABLE(name_ character varying, surname_ character varying,tc_ character varying, age_ smallint ,password_ character varying,gender_ character) 
+AS 
+$$
+BEGIN
+    RETURN QUERY SELECT "name", "surname","tc","age","password","gender" FROM "Person"."Person"
+                 WHERE "personId" = personNo;
+END;
+$$
+LANGUAGE "plpgsql";
+
+select * from personsearch(5);
+
+
+------------------------------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.total_Income()
+RETURNS money
+LANGUAGE "plpgsql"
+AS
+$$
+DECLARE
+    total_Income NUMERIC;
+BEGIN
+    total_Income := (SELECT SUM("public"."Income"."appointmentFee"+"public"."Income"."donation") FROM "public"."Income");
+
+    RETURN total_Income;
+END
+$$;
+
+select * from totoal_Income();
+
+
+--------------------------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION public.total_Expense()
+RETURNS money
+LANGUAGE "plpgsql"
+AS
+$$
+DECLARE
+    total_Expense NUMERIC;
+BEGIN
+    total_Expense := (SELECT SUM("public"."Expense"."electric"+"public"."Expense"."water"+"public"."Expense"."naturalGas"+"public"."Expense"."medicalSupplies") FROM "public"."Expense");
+
+    RETURN total_Expense;
+END
+$$;
+
+select * from total_Expense();
+
+--------------------------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION public.total_PaidSalary()
+RETURNS money
+LANGUAGE "plpgsql"
+AS
+$$
+DECLARE
+    total_PaidSalary NUMERIC;
+	total_doctorSalary NUMERIC;
+	total_SecretarySalary NUMERIC;
+	total_StaffSalary NUMERIC;
+BEGIN
+    total_doctorSalary := (SELECT SUM("Person"."Doctor"."salary") FROM "Person"."Doctor");
+	total_SecretarySalary:=(SELECT SUM("Person"."Secretary"."salary") FROM "Person"."Secretary");
+	total_StaffSalary:=(SELECT SUM("Person"."Staff"."salary") FROM "Person"."Staff");
+	total_PaidSalary:= total_doctorSalary + total_SecretarySalary + total_StaffSalary;
+    RETURN total_PaidSalary;
+END
+$$;
+
+select * from total_paidSalary();
