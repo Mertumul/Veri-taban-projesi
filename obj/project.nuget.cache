@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "dgSpecHash": "ljtuZRYrrpyvHOHNKJDHy3HdX1LHdTn/DICNKPQjgE8rKEXGI6eOvBaPMcuxqqIUNH1fQFbacpQQUJ0N2TFbuw==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\90541\\Desktop\\Dersler\\Veri Tabanı\\1.ProjeÖdevi\\HospitalProject\\HospitalProject\\HospitalProject.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\90541\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\6.0.0\\microsoft.extensions.logging.abstractions.6.0.0.nupkg.sha512",
+    "C:\\Users\\90541\\.nuget\\packages\\npgsql\\7.0.0\\npgsql.7.0.0.nupkg.sha512",
+    "C:\\Users\\90541\\.nuget\\packages\\system.buffers\\4.5.1\\system.buffers.4.5.1.nupkg.sha512",
+    "C:\\Users\\90541\\.nuget\\packages\\system.diagnostics.diagnosticsource\\6.0.0\\system.diagnostics.diagnosticsource.6.0.0.nupkg.sha512",
+    "C:\\Users\\90541\\.nuget\\packages\\system.memory\\4.5.4\\system.memory.4.5.4.nupkg.sha512",
+    "C:\\Users\\90541\\.nuget\\packages\\system.runtime.compilerservices.unsafe\\6.0.0\\system.runtime.compilerservices.unsafe.6.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}
